@@ -1,60 +1,92 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, StyleSheet,Keyboard, ScrollView, FlatList, Clipboard, ActivityIndicator } from 'react-native';
-import Together from 'together-ai';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  StyleSheet,
+  Keyboard,
+  ScrollView,
+  FlatList,
+  Clipboard,
+  ActivityIndicator,
+} from "react-native";
+import Together from "together-ai";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 const together = new Together({
-  apiKey: '641a769976dea73fe13ea16626c136498408407c837df7b32ac4ca8b3bbd9014',
+  apiKey: "641a769976dea73fe13ea16626c136498408407c837df7b32ac4ca8b3bbd9014",
 });
 
 const openAIService = async (inputText) => {
   try {
     const response = await together.chat.completions.create({
       messages: [
-        { role: 'system', content: 'Given an English input text, you are tasked is paraphrase the input text in 3 version.' },
-        { role: 'user', content: inputText },
+        {
+          role: "system",
+          content:
+            "Given an English input text, you are tasked is paraphrase the input text in 3 version.",
+        },
+        { role: "user", content: inputText },
       ],
-      model: 'meta-llama/Llama-3-8b-chat-hf',
+      model: "meta-llama/Llama-3-8b-chat-hf",
     });
     return response.choices[0].message.content;
   } catch (error) {
-    console.error('Error in openAIService:', error);
-    return 'Error occurred while processing your request.';
+    console.error("Error in openAIService:", error);
+    return "Error occurred while processing your request.";
   }
 };
 
 const parseResponses = (response) => {
-  const lines = response.split('\n').filter(line => line.trim() !== '');
-  const versions = lines.map(line => line.replace(/^\d+\.\s/, ''));
+  const lines = response.split("\n").filter((line) => line.trim() !== "");
+  const versions = lines.map((line) => line.replace(/^\d+\.\s/, ""));
   return versions.slice(1);
 };
 
 const Paraphrasing = () => {
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState("");
   const [paraphrasedVersions, setParaphrasedVersions] = useState([]);
-  const [selectedVersion, setSelectedVersion] = useState('');
-  const [isLoading, setIsLoading] = useState(false); 
+  const [selectedVersion, setSelectedVersion] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [uid, setUid] = useState(null);
+  const db = getFirestore();
+  const auth = getAuth();
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      setUid(user.uid);
+    }
+  });
 
   const handleConfirm = async () => {
-    setIsLoading(true); 
+    setIsLoading(true);
     Keyboard.dismiss();
     try {
-      merged = inputText.replace(/\n+/g, ' ').replace(/\s\s+/g, ' ').trim();
+      merged = inputText.replace(/\n+/g, " ").replace(/\s\s+/g, " ").trim();
       const response = await openAIService(merged);
       const versions = parseResponses(response);
-      console.log(inputText)
-      console.log(response)
+      console.log(inputText);
+      console.log(response);
       setParaphrasedVersions(versions);
-      setSelectedVersion(''); 
+      setSelectedVersion("");
     } catch (error) {
-      console.error('Error in handleConfirm:', error);
+      console.error("Error in handleConfirm:", error);
     } finally {
-      setIsLoading(false); 
+      setIsLoading(false);
     }
   };
 
-  const handleSelectVersion = (version) => {
+  const handleSelectVersion = async (version) => {
     setSelectedVersion(version);
-    setParaphrasedVersions([]); 
+    const docRef = await addDoc(collection(db, "database"), {
+      id: uid,
+      input: inputText,
+      output: version,
+    });
+    setParaphrasedVersions([]);
   };
 
   const wordCount = (text) => {
@@ -64,7 +96,6 @@ const Paraphrasing = () => {
     const words = text.trim().split(/\s+/);
     return words.length;
   };
-  
 
   const copyToClipboard = () => {
     Clipboard.setString(selectedVersion);
@@ -109,8 +140,13 @@ const Paraphrasing = () => {
                     <Text style={styles.outputText}>{selectedVersion}</Text>
                   </ScrollView>
                 </View>
-                <Text style={styles.wordCount}>Word count: {wordCount(selectedVersion)}</Text>
-                <TouchableOpacity style={styles.copyButton} onPress={copyToClipboard}>
+                <Text style={styles.wordCount}>
+                  Word count: {wordCount(selectedVersion)}
+                </Text>
+                <TouchableOpacity
+                  style={styles.copyButton}
+                  onPress={copyToClipboard}
+                >
                   <Text style={styles.copyButtonText}>Copy</Text>
                 </TouchableOpacity>
               </>
@@ -125,44 +161,44 @@ const Paraphrasing = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingTop: 70,
   },
   content: {
     flex: 1,
-    width: '80%',
-    alignItems: 'center',
+    width: "80%",
+    alignItems: "center",
   },
   input: {
-    width: '100%',
+    width: "100%",
     height: 200,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
-    padding: 10
+    padding: 10,
   },
   confirmButton: {
-    backgroundColor: '#2CB673',
+    backgroundColor: "#2CB673",
     paddingVertical: 10,
     paddingHorizontal: 30,
     borderRadius: 8,
-    marginBottom: 10
+    marginBottom: 10,
   },
   confirmButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   outputContainer: {
-    width: '100%',
+    width: "100%",
     height: 250,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
-    padding: 10
+    padding: 10,
   },
   outputLabel: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 5,
   },
   wordCount: {
@@ -173,20 +209,20 @@ const styles = StyleSheet.create({
     padding: 5,
     marginVertical: 5,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
-    backgroundColor: '#f9f9f9',
-    color: '#2CB673'
+    backgroundColor: "#f9f9f9",
+    color: "#2CB673",
   },
   copyButton: {
-    backgroundColor: '#2CB673',
+    backgroundColor: "#2CB673",
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 8
+    borderRadius: 8,
   },
   copyButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
 

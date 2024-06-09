@@ -1,49 +1,85 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, StyleSheet, Keyboard, Modal, ScrollView, Pressable, Linking, Alert, ActivityIndicator } from 'react-native';
-import Together from 'together-ai';
-import { WebView } from 'react-native-webview';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  StyleSheet,
+  Keyboard,
+  Modal,
+  ScrollView,
+  Pressable,
+  Linking,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
+import Together from "together-ai";
+import { WebView } from "react-native-webview";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 const together = new Together({
-  apiKey: '641a769976dea73fe13ea16626c136498408407c837df7b32ac4ca8b3bbd9014',
+  apiKey: "641a769976dea73fe13ea16626c136498408407c837df7b32ac4ca8b3bbd9014",
 });
 
 const openAIService = async (inputText) => {
   try {
     const response = await together.chat.completions.create({
       messages: [
-        { role: 'system', content: 'Check the input text for plagiarism, analyze the input text and compare it with other documents on the internet. Then you simply provide a percentage of how much of the text matches other documents on the first line, as well as links to those documents on the new line. Do not need any introductory or explanatory phrases.' },
-        { role: 'user', content: inputText },
+        {
+          role: "system",
+          content:
+            "Check the input text for plagiarism, analyze the input text and compare it with other documents on the internet. Then you simply provide a percentage of how much of the text matches other documents on the first line, as well as links to those documents on the new line. Do not need any introductory or explanatory phrases.",
+        },
+        { role: "user", content: inputText },
       ],
-      model: 'meta-llama/Llama-3-8b-chat-hf',
+      model: "meta-llama/Llama-3-8b-chat-hf",
     });
     return response.choices[0].message.content;
   } catch (error) {
-    console.error('Error in openAIService:', error);
-    return 'Error occurred while processing your request.';
+    console.error("Error in openAIService:", error);
+    return "Error occurred while processing your request.";
   }
 };
 
 const PlagiarismChecker = () => {
-  const [inputText, setInputText] = useState('');
-  const [matchingPercentage, setMatchingPercentage] = useState('');
+  const [inputText, setInputText] = useState("");
+  const [matchingPercentage, setMatchingPercentage] = useState("");
   const [matchingLinks, setMatchingLinks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedLink, setSelectedLink] = useState('');
+  const [selectedLink, setSelectedLink] = useState("");
+  const [uid, setUid] = useState(null);
+  const db = getFirestore();
+  const auth = getAuth();
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      setUid(user.uid);
+    }
+  });
 
   const handleConfirm = async () => {
     setIsLoading(true);
     Keyboard.dismiss();
+    let linksString = "";
     try {
       const result = await openAIService(inputText);
-      const [percentageString, ...links] = result.split('\n');
+      const [percentageString, ...links] = result.split("\n");
       setMatchingPercentage(percentageString);
-      setMatchingLinks(links.filter(link => link.trim() !== ''));
+      setMatchingLinks(links.filter((link) => link.trim() !== ""));
+      linksString = links.join("\n");
     } catch (error) {
-      console.error('Error in handleConfirm:', error);
-      setMatchingPercentage('Error occurred while processing your request.');
+      console.error("Error in handleConfirm:", error);
+      setMatchingPercentage("Error occurred while processing your request.");
       setMatchingLinks([]);
     } finally {
+      const docRef = await addDoc(collection(db, "database"), {
+        id: uid,
+        input: inputText,
+        output:
+          "Matching percentage: " + matchingPercentage + "\n" + linksString,
+      });
       setIsLoading(false);
     }
   };
@@ -56,14 +92,14 @@ const PlagiarismChecker = () => {
     return words.length;
   };
 
-  const openURL =  async (url) => {
+  const openURL = async (url) => {
     const isSupported = await Linking.canOpenURL(url);
-    if(isSupported) {
+    if (isSupported) {
       await Linking.openURL(url);
     } else {
       Alert.alert(`Can't open this url: ${url}`);
     }
-  }
+  };
 
   return (
     <View style={styles.container}>
@@ -75,20 +111,32 @@ const PlagiarismChecker = () => {
           value={inputText}
           multiline
         />
-        <Text style={styles.wordCount}>Word count: {wordCount(inputText)}</Text>       
+        <Text style={styles.wordCount}>Word count: {wordCount(inputText)}</Text>
         <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
           <Text style={styles.confirmButtonText}>Confirm</Text>
         </TouchableOpacity>
         {isLoading ? (
-            <ActivityIndicator size="large" color="#2CB673" />
+          <ActivityIndicator size="large" color="#2CB673" />
         ) : (
           <ScrollView contentContainerStyle={styles.resultsContainer}>
             <View>
-              <Text style={styles.matchingPercentage}>Matching percent: {matchingPercentage}</Text>
+              <Text style={styles.matchingPercentage}>
+                Matching percent: {matchingPercentage}
+              </Text>
             </View>
             {matchingLinks.map((link, index) => (
-              <Pressable key={index} onPress={() => openURL(link)} style={styles.linkContainer}>
-                <Text style={styles.matchingLink} numberOfLines={1} ellipsizeMode="middle">{link}</Text>
+              <Pressable
+                key={index}
+                onPress={() => openURL(link)}
+                style={styles.linkContainer}
+              >
+                <Text
+                  style={styles.matchingLink}
+                  numberOfLines={1}
+                  ellipsizeMode="middle"
+                >
+                  {link}
+                </Text>
               </Pressable>
             ))}
           </ScrollView>
@@ -96,7 +144,10 @@ const PlagiarismChecker = () => {
       </KeyboardAvoidingView>
       <Modal visible={modalVisible} animationType="slide">
         <WebView source={{ uri: selectedLink }} />
-        <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => setModalVisible(false)}
+        >
           <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>
       </Modal>
@@ -107,25 +158,25 @@ const PlagiarismChecker = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingTop: 70,
   },
   content: {
     flex: 1,
-    width: '80%',
-    alignItems: 'center',
+    width: "80%",
+    alignItems: "center",
   },
   input: {
-    width: '100%',
+    width: "100%",
     height: 250,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
     padding: 10,
   },
   confirmButton: {
-    backgroundColor: '#2CB673',
+    backgroundColor: "#2CB673",
     paddingVertical: 10,
     paddingHorizontal: 30,
     borderRadius: 8,
@@ -133,40 +184,40 @@ const styles = StyleSheet.create({
     marginTop: -10,
   },
   confirmButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   resultsContainer: {
-    width: '100%',
+    width: "100%",
   },
   matchingPercentage: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
-    textAlign: "center"
+    textAlign: "center",
   },
   linkContainer: {
-    backgroundColor: '#2CB673',
+    backgroundColor: "#2CB673",
     padding: 10,
     borderRadius: 5,
     marginBottom: 10,
-    width: '100%',
-    minWidth: 331
+    width: "100%",
+    minWidth: 331,
   },
   matchingLink: {
-    color: 'blue',
+    color: "blue",
   },
   closeButton: {
-    backgroundColor: '#2CB673',
+    backgroundColor: "#2CB673",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
     marginTop: 10,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   closeButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   wordCount: {
     padding: 10,

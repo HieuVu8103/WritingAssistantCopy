@@ -80,12 +80,18 @@ export default function App() {
         <Stack.Screen
           name="GrammarCheck"
           component={GrammarCheck}
-          options={headerOptions}
+          options={{
+            ...headerOptions,
+            title: "Grammar Check",
+          }}
         />
         <Stack.Screen
           name="TextCompletion"
           component={TextCompletion}
-          options={headerOptions}
+          options={{
+            ...headerOptions,
+            title: "Text Completion",
+          }}
         />
         <Stack.Screen
           name="Paraphrasing"
@@ -95,7 +101,10 @@ export default function App() {
         <Stack.Screen
           name="PlagiarismChecker"
           component={PlagiarismChecker}
-          options={headerOptions}
+          options={{
+            ...headerOptions,
+            title: "Plagiarism Checker",
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

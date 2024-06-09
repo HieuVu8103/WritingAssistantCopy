@@ -17,19 +17,18 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   onAuthStateChanged,
-  GoogleAuthProvider,
-  firebase,
 } from "@firebase/auth";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID",
+  apiKey: "AIzaSyBSh-kV1ia7gJcMMHHY3URrzHnIXz1AtA8",
+  authDomain: "autho-d6261.firebaseapp.com",
+  projectId: "autho-d6261",
+  storageBucket: "autho-d6261.appspot.com",
+  messagingSenderId: "500884480715",
+  appId: "1:500884480715:web:a9f3641479bfeb03e8f14e",
+  measurementId: "G-WCNBH5EEP8",
 };
 const app = initializeApp(firebaseConfig);
 
@@ -38,13 +37,15 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true); // Track whether it's login or register
+  const [realName, setRealName] = useState("");
 
   const auth = getAuth(app);
-
+  const db = getFirestore();
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         console.log("User login!");
+        navigation.navigate("Home");
       }
     });
 
@@ -73,9 +74,7 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
-  const handleGoogle = () => {
-    
-  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -117,18 +116,7 @@ const LoginScreen = ({ navigation }) => {
               {isLogin ? "Login" : "Register"}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.button,
-              {
-                backgroundColor: "#4285F4",
-                marginTop: 10,
-              },
-            ]}
-            onPress={handleGoogle}
-          >
-            <Text style={styles.buttonText}>Login as Google Account</Text>
-          </TouchableOpacity>
+
           <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
             <Text style={styles.toggleText}>
               {isLogin
