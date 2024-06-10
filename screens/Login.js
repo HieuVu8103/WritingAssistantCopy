@@ -17,8 +17,12 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   onAuthStateChanged,
+  initializeAuth,
+  getReactNativePersistence,
 } from "@firebase/auth";
 import { getFirestore, collection, addDoc } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 
 // Firebase configuration
 const firebaseConfig = {
@@ -31,7 +35,9 @@ const firebaseConfig = {
   measurementId: "G-WCNBH5EEP8",
 };
 const app = initializeApp(firebaseConfig);
-
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage),
+});
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,7 +45,6 @@ const LoginScreen = ({ navigation }) => {
   const [isLogin, setIsLogin] = useState(true); // Track whether it's login or register
   const [realName, setRealName] = useState("");
 
-  const auth = getAuth(app);
   const db = getFirestore();
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -73,7 +78,7 @@ const LoginScreen = ({ navigation }) => {
         setEmail("");
         setPassword("");
         setConfirmPassword("");
-        setRealName("");  
+        setRealName("");
       }
     } catch (error) {
       console.error("Authentication error:", error.message);
