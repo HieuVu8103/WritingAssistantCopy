@@ -69,6 +69,7 @@ const TextCompletion = () => {
         id: uid,
         input: inputText,
         output: modifiedOutputText,
+        time: new Date().toISOString(),
       });
     } catch (error) {
       console.error("Error in handleConfirm:", error);

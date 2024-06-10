@@ -1,38 +1,90 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Image,
+  TouchableOpacity,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import {
+  getFirestore,
+  collection,
+  getDoc,
+  getDocs,
+  doc,
+} from "firebase/firestore";
+import { get } from "react-native-clipboard";
+import { useFocusEffect } from "@react-navigation/native";
+const Account = ({ navigation }) => {
+  const db = getFirestore();
 
-const Account = () => {
+  const [uid, setUid] = useState(null);
+  const auth = getAuth();
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      setUid(user.uid);
+    }
+  });
+
+  const [userData, setUserData] = useState({
+    name: "John Doe",
+    email: "",
+  });
+
   const [activityHistory, setActivityHistory] = useState([
-    { id: 1, input: 'This is a sample input text.', output: 'This is the corresponding output.' },
-    { id: 2, input: 'Another example input.', output: 'Another example output.' },
+    {
+      id: 1,
+      input: "This is a sample input text.",
+      output: "This is the corresponding output.",
+    },
+    {
+      id: 2,
+      input: "Another example input.",
+      output: "Another example output.",
+    },
   ]);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        if (uid) {
+          const docsRef = await getDocs(collection(db, "database"));
+          const userActivities = [];
+          docsRef.forEach((doc) => {
+            if (doc.data().id === uid) {
+              console.log(doc.id, " => ", doc.data());
+              userActivities.push({
+                id: doc.id,
+                input: doc.data().input,
+                output: doc.data().output,
+              });
+            }
+          });
+          const userRef = await getDocs(collection(db, "user"));
+          userRef.forEach((doc) => {
+            if (doc.data().id === uid) {
+              setUserData(doc.data());
+            }
+          });
+          setActivityHistory(userActivities);
+        }
+      };
 
-  const userData = {
-    name: 'Hiếu Vũ',
-    email: 'hieu.vu@example.com',
-    photo: 'https://scontent.fhan5-9.fna.fbcdn.net/v/t39.30808-1/431246820_1453386681926182_5806316568775742809_n.jpg?stp=dst-jpg_p200x200&_nc_cat=109&ccb=1-7&_nc_sid=5f2048&_nc_ohc=1gePTyOGMEgQ7kNvgGpiC_3&_nc_ht=scontent.fhan5-9.fna&oh=00_AYA1Va_KpVMV0K-9Lk7rKwzQK4_j0vLJbpPt8hVtsexzbw&oe=665FE1CA',
+      fetchData();
+    }, [uid, db])
+  );
+  console.log(userData);
+
+  const logout = () => {
+    auth.signOut();
+    navigation.navigate("Login");
   };
-
-
-  // Hàm để thêm một mục mới vào lịch sử hoạt động
-  const addToActivityHistory = (input, output) => {
-    const newActivity = {
-      id: Math.random().toString(), // Tạo một id ngẫu nhiên
-      input: input,
-      output: output,
-    };
-    setActivityHistory(prevActivity => [newActivity, ...prevActivity]);
-  };
-
-  const logout = () =>{
-    console.log("log out")
-  }
 
   return (
     <View style={styles.container}>
       <View style={styles.userInfo}>
-        <Image source={{ uri: userData.photo }} style={styles.photo} />
         <View>
           <Text style={styles.name}>{userData.name}</Text>
           <Text style={styles.email}>{userData.email}</Text>
@@ -62,12 +114,12 @@ const Account = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 16,
   },
   userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   photo: {
@@ -78,22 +130,22 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   email: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   dashboardContainer: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
     padding: 16,
   },
   dashboardTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
   },
   activityItem: {
@@ -101,23 +153,23 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   output: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   logoutButton: {
-    backgroundColor: 'red',
+    backgroundColor: "red",
     padding: 5,
     borderRadius: 5,
     marginLeft: 89,
-    marginBottom: 18
+    marginBottom: 18,
   },
   logoutButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
 

@@ -68,6 +68,7 @@ const GrammarCheck = () => {
         id: uid,
         input: inputText,
         output: result,
+        time: new Date().toISOString(),
       });
     } catch (error) {
       console.error("Error in handleConfirm:", error);

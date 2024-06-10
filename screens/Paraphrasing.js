@@ -85,6 +85,7 @@ const Paraphrasing = () => {
       id: uid,
       input: inputText,
       output: version,
+      time: new Date().toISOString(),
     });
     setParaphrasedVersions([]);
   };

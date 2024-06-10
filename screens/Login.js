@@ -63,6 +63,11 @@ const LoginScreen = ({ navigation }) => {
           return;
         }
         await createUserWithEmailAndPassword(auth, email, password);
+        const docRef = await addDoc(collection(db, "user"), {
+          id: auth.currentUser.uid,
+          email,
+          name: realName,
+        });
         console.log("User created successfully!");
         setIsLogin(true);
         setEmail("");
@@ -73,7 +78,6 @@ const LoginScreen = ({ navigation }) => {
       console.error("Authentication error:", error.message);
     }
   };
-
 
   return (
     <KeyboardAvoidingView
@@ -92,6 +96,14 @@ const LoginScreen = ({ navigation }) => {
             autoCapitalize="none"
             keyboardType="email-address"
           />
+          {!isLogin && (
+            <TextInput
+              style={styles.input}
+              placeholder="Real Name"
+              value={realName}
+              onChangeText={setRealName}
+            />
+          )}
           <TextInput
             style={styles.input}
             placeholder="Password"
@@ -100,13 +112,15 @@ const LoginScreen = ({ navigation }) => {
             secureTextEntry
           />
           {!isLogin && (
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-            />
+            <View>
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+              />
+            </View>
           )}
           <TouchableOpacity
             style={styles.button}

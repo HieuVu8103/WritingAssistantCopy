@@ -79,6 +79,7 @@ const PlagiarismChecker = () => {
         input: inputText,
         output:
           "Matching percentage: " + matchingPercentage + "\n" + linksString,
+        time: new Date().toISOString(),
       });
       setIsLoading(false);
     }
