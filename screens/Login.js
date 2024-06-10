@@ -133,7 +133,7 @@ const LoginScreen = ({ navigation }) => {
             onPress={handleAuthentication}
           >
             <Text style={styles.buttonText}>
-              {isLogin ? "Login" : "Register"}
+              {isLogin ? "Login" : "Register and Login"}
             </Text>
           </TouchableOpacity>
 
