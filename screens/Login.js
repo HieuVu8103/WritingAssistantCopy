@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Platform,
   ScrollView,
+  Alert,
 } from "react-native";
 import { initializeApp } from "@firebase/app";
 import {
@@ -22,7 +23,6 @@ import {
 } from "@firebase/auth";
 import { getFirestore, collection, addDoc } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 
 // Firebase configuration
 const firebaseConfig = {
@@ -65,6 +65,7 @@ const LoginScreen = ({ navigation }) => {
       } else {
         if (password !== confirmPassword) {
           console.error("Passwords do not match!");
+          Alert.alert("Passwords do not match!");
           return;
         }
         await createUserWithEmailAndPassword(auth, email, password);
@@ -81,7 +82,18 @@ const LoginScreen = ({ navigation }) => {
         setRealName("");
       }
     } catch (error) {
-      console.error("Authentication error:", error.message);
+      if (error.code === "auth/email-already-in-use") {
+        Alert.alert("That email address is already in use!");
+      } else if (error.code === "auth/invalid-email") {
+        Alert.alert("That email address is invalid!");
+      } else if (error.code === "auth/weak-password") {
+        Alert.alert("Password is too weak!");
+      } else if (error.code === "auth/invalid-credential") {
+        Alert.alert("Wrong email or password!");
+      } else {
+        console.error(error.code);
+        Alert.alert("An error occurred. Please try again later.");
+      }
     }
   };
 
