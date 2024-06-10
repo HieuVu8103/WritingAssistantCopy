@@ -67,6 +67,10 @@ const LoginScreen = ({ navigation }) => {
           console.error("Passwords do not match!");
           Alert.alert("Passwords do not match!");
           return;
+        } else if (realName === "") {
+          console.error("Please enter your real name!");
+          Alert.alert("Please enter your real name!");
+          return;
         }
         await createUserWithEmailAndPassword(auth, email, password);
         const docRef = await addDoc(collection(db, "user"), {
