@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "100%",
-    height: 150,
+    height: 100,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   },
   outputContainer: {
     width: "100%",
-    height: 250,
+    height: 200,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,

@@ -43,7 +43,12 @@ const openAIService = async (inputText) => {
 const parseResponses = (response) => {
   const lines = response.split("\n").filter((line) => line.trim() !== "");
   const versions = lines.map((line) => line.replace(/^\d+\.\s/, ""));
-  return versions.slice(1);
+  // Filter out unwanted sentences
+  const filteredVersions = versions.filter((version) => 
+    !version.startsWith("Let me know if you'd like me to paraphrase anything else!") &&
+    !version.startsWith("Here are three paraphrased versions of the input text:")
+  );
+  return filteredVersions.slice(0, 3);  // Ensure only the first three versions are returned
 };
 
 const Paraphrasing = () => {
