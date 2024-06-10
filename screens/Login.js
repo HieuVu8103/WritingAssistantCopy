@@ -73,6 +73,7 @@ const LoginScreen = ({ navigation }) => {
         setEmail("");
         setPassword("");
         setConfirmPassword("");
+        setRealName("");  
       }
     } catch (error) {
       console.error("Authentication error:", error.message);
